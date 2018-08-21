@@ -805,8 +805,23 @@ MulticopterPositionControl::start_flight_task()
 		}
 	}
 
+	// manual altitude control
+	if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ALTCTL || _vehicle_status.in_transition_mode
+	    || task_failure) {
+		int error = _flight_tasks.switchTask(FlightTaskIndex::ManualAltitude);
+
+		if (error != 0) {
+			PX4_WARN("Altitude-Ctrl activation failed with error: %s", _flight_tasks.errorToString(error));
+			task_failure = true;
+
+		} else {
+			task_failure = false;
+		}
+	}
+
 	// manual position control
-	if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_POSCTL || task_failure) {
+	if ((_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_POSCTL && !_vehicle_status.in_transition_mode)
+	    || task_failure) {
 
 		int error = 0;
 
@@ -838,22 +853,6 @@ MulticopterPositionControl::start_flight_task()
 			task_failure = false;
 		}
 	}
-
-	// manual altitude control
-	if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ALTCTL || task_failure) {
-		int error = _flight_tasks.switchTask(FlightTaskIndex::ManualAltitude);
-
-		if (error != 0) {
-			PX4_WARN("Altitude-Ctrl activation failed with error: %s", _flight_tasks.errorToString(error));
-			task_failure = true;
-			_task_failure_count++;
-
-		} else {
-			check_failure(task_failure, vehicle_status_s::NAVIGATION_STATE_ALTCTL);
-			task_failure = false;
-		}
-	}
-
 
 	// manual stabilized control
 	if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL
