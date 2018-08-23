@@ -67,6 +67,7 @@
 #include <uORB/topics/debug_value.h>
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/differential_pressure.h>
+#include <uORB/topics/distance.h>
 #include <uORB/topics/distance_sensor.h>
 #include <uORB/topics/estimator_status.h>
 #include <uORB/topics/fw_pos_ctrl_status.h>
@@ -104,6 +105,8 @@
 #include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/vehicle_magnetometer.h>
 #include <uORB/uORB.h>
+
+#include <v2.0/build/common/mavlink_msg_distance.h>
 
 using matrix::wrap_2pi;
 
