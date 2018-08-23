@@ -291,6 +291,65 @@ void get_mavlink_mode_state(const struct vehicle_status_s *const status, uint8_t
 	}
 }
 
+/* wip */
+
+class MavlinkStreamDistance : public MavlinkStream
+{
+public:
+    const char *get_name() const
+    {
+        return MavlinkStreamDistance::get_name_static();
+    }
+    static const char *get_name_static()
+    {
+        return "DISTANCE";
+    }
+    uint8_t get_id()
+    {
+        return MAVLINK_MSG_ID_DISTANCE;
+    }
+    static MavlinkStream *new_instance(Mavlink *mavlink)
+    {
+        return new MavlinkStreamDistance(mavlink);
+    }
+    unsigned get_size()
+    {
+        return MAVLINK_MSG_ID_DISTANCE_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+    }
+
+private:
+    MavlinkOrbSubscription *_sub;
+    uint64_t _distance_time;
+
+    /* do not allow top copying this class */
+    MavlinkStreamDistance(MavlinkStreamDistance &);
+    MavlinkStreamDistance& operator = (const MavlinkStreamDistance &);
+
+protected:
+    explicit MavlinkStreamDistance(Mavlink *mavlink) : MavlinkStream(mavlink),
+        _sub(_mavlink->add_orb_subscription(ORB_ID(distance))),  // make sure you enter the name of your uORB topic here
+        _distance_time(0)
+    {}
+
+    void send(const hrt_abstime t)
+    {
+        struct distance_struct_s _distance;    //make sure distance_struct_s is the definition of your uORB topic
+
+        if (_sub->update(&_distance_time, &_distance)) {
+            mavlink_distance_t _msg_distance;  //make sure mavlink_distance_t is the definition of your custom MAVLink message
+
+            _msg_distance.timestamp = _distance.timestamp;
+            _msg_distance.time_start_usec = _distance.time_start_usec;
+            _msg_distance.time_stop_usec  = _distance.time_stop_usec;
+            _msg_distance.coefficients =_distance.coefficients;
+            _msg_distance.seq_id = _distance.seq_id;
+
+            _mavlink->send_message(MAVLINK_MSG_ID_DISTANCE, &_msg_distance);
+        }
+    }
+};
+
+
 
 class MavlinkStreamHeartbeat : public MavlinkStream
 {
@@ -4515,6 +4574,7 @@ protected:
 
 static const StreamListItem streams_list[] = {
 	StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static, &MavlinkStreamHeartbeat::get_id_static),
+	StreamListItem(&MavlinkStreamDistance::new_instance, &MavlinkStreamDistance::get_name_static, &MavlinkStreamDistance::get_id_static),
 	StreamListItem(&MavlinkStreamStatustext::new_instance, &MavlinkStreamStatustext::get_name_static, &MavlinkStreamStatustext::get_id_static),
 	StreamListItem(&MavlinkStreamCommandLong::new_instance, &MavlinkStreamCommandLong::get_name_static, &MavlinkStreamCommandLong::get_id_static),
 	StreamListItem(&MavlinkStreamSysStatus::new_instance, &MavlinkStreamSysStatus::get_name_static, &MavlinkStreamSysStatus::get_id_static),
